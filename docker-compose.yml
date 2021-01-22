@@ -1,0 +1,42 @@
+version: "2.2"
+
+services:
+    reverse-proxy:
+        image: jwilder/nginx-proxy:alpine
+        container_name: reverse-proxy
+        volumes:
+            - /var/run/docker.sock:/tmp/docker.sock:ro
+            - ./reverse-proxy/cert:/etc/nginx/certs
+            - ./reverse-proxy/vhost.d:/etc/nginx/vhost.d
+            - ./reverse-proxy/html:/usr/share/nginx/html
+            - ./reverse-proxy/dhparam:/etc/nginx/dhparam
+            - ./conf/my_proxy.conf:/etc/nginx/conf.d/my_proxy.conf:ro
+        ports:
+            - "80:80"
+            - "443:443"
+        environment:
+            - HTTPS_METHOD=noredirect
+            - DEFAULT_HOST=example.com
+        restart: unless-stopped
+        cpus: 1
+        mem_limit: 100M
+        memswap_limit: 100M
+        network_mode: bridge
+
+    reverse-proxy-letencrypt:
+        image: jrcs/letsencrypt-nginx-proxy-companion
+        container_name: reverse-proxy-letencrypt
+        volumes_from:
+            - reverse-proxy
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            - ./reverse-proxy/acme:/etc/acme.sh
+        environment:        
+            - DEFAULT_EMAIL=xxx@example.com
+        depends_on:
+            - reverse-proxy
+        restart: unless-stopped
+        cpus: 1
+        mem_limit: 100M
+        memswap_limit: 100M
+        network_mode: bridge

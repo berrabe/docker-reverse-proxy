@@ -1,0 +1,61 @@
+#!/bin/bash
+
+# -------------------------------------------------
+
+_CONTAINER_NAME_=$1
+
+# -------------------------------------------------
+
+
+clear
+echo -e "\t ./ Docker Auto Join Network \.\n\n"
+
+
+function check() {
+	if [[ $? -eq 0 ]]; then
+		echo "OK"
+	else
+		echo "ERROR $?"
+		exit
+	fi
+}
+
+
+echo -e " [+] LIST ALL DOCKER NETWORKS "
+_ALL_NET_=$(docker network list --format "{{.ID}}={{.Name}}" | grep -vE "host|none") 
+echo -e "$_ALL_NET_" | awk -F '=' '{printf "  |--[-] %s >>> %s\n", $1, $2}'
+
+
+
+echo -e "\n\n [+] LIST [ $_CONTAINER_NAME_ ] CONTAINER CONNECTED NETWORKS"
+_ALL_CONN_=$(docker inspect $_CONTAINER_NAME_ | grep "NetworkID" | awk -F '"' '{print $4}' | cut -b -12)
+echo -e "$_ALL_CONN_" |  awk '{if($1=="") $1="EMPTY"; printf "  |--[-] %s\n", $1}'
+
+if [[ $_ALL_CONN_ == "" ]]; then
+	exit
+fi
+
+
+
+echo -e "\n\n [+] DISCONNECT ALL NETWORKS ATTACHED TO [ $_CONTAINER_NAME_ ] CONTAINER"
+for i in $_ALL_CONN_; do
+	printf "  |--[-] Disconecting %s ... " "$i"
+	docker network disconnect $i $_CONTAINER_NAME_ >/dev/null 2>&1
+
+	check
+done
+
+
+
+echo -e "\n\n [+] CONNECTING [ $_CONTAINER_NAME_ ] TO ALL NETWORKS"
+for i in $(echo -e "$_ALL_NET_" | awk -F '=' '{print $1}'); do
+	printf "  |--[-] Connecting to %s ... " "$i"
+	docker network connect $i $_CONTAINER_NAME_ >/dev/null 2>&1
+
+	check
+done
+
+
+echo -ne "\n\n [+] RESTART [ $_CONTAINER_NAME_ ] CONTAINER ... "
+docker restart $_CONTAINER_NAME_ >/dev/null 2>&1
+check
