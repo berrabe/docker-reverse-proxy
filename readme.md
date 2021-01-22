@@ -10,13 +10,13 @@ This docker is used to create a reverse proxy on the http / https protocol, base
 everything in this repo is based from [nginx-proxy/nginx-proxy](https://github.com/nginx-proxy/nginx-proxy) for nginx-reverse-proxy ... 
 and this [docker-letsencrypt-nginx-proxy-companion](https://github.com/nginx-proxy/docker-letsencrypt-nginx-proxy-companion) for auto generated SSL certs with letsencrypt 
 
-make sure you have installed docker and docker-compose, if not installed, please see the [official docker documentation here](https://docs.docker.com/get-docker/)
+make sure you have installed **docker** and **docker-compose**, if not installed, please see the [official docker documentation here](https://docs.docker.com/get-docker/). And make sure you have setup the domain to the ip server you want to install this reverse-proxy on
 
 
 <br/><br/>
 ### USAGE
 ---
-- first step, clone this repo, and do a few steps like the steps below
+- first step, clone this repo
 ```sh
 > git clone https://github.com/berrabe/docker-reverse-proxy.git
 > cd docker-reverse-proxy
@@ -36,7 +36,7 @@ make sure you have installed docker and docker-compose, if not installed, please
             - DEFAULT_EMAIL=xxx@example.com     
 ```
 
-- run this program with the command
+- run this compose file with
 ```sh
 > docker-compose up -d
 
@@ -44,28 +44,34 @@ make sure you have installed docker and docker-compose, if not installed, please
 > docker-compose logs -f
 ```
 
-- lastly, how to test reverse-proxy is working or not
+
+<br/><br/>
+### TESTING
+---
+
+to test whether the reverse proxy is working or not, we have to run the **"dummy"** container which will trigger the docker reverse-proxy to auto-generated config and ssl certs against the domains in env var `VIRTUAL_HOST` and `LETSENCRYPT_HOST`
+- change `testing-dummy.example.com` to your domain
 ```sh
 > docker run -d \              
         --name web \
-        -e VIRTUAL_HOST=haha.example.com \
-        -e LETSENCRYPT_HOST=haha.example.com \
+        -e VIRTUAL_HOST=testing-dummy.example.com \
+        -e LETSENCRYPT_HOST=testing-dummy.example.com \
         nginx:alpine                        
 ```
 
 <br/><br/>
 ### DIFFERENT NETWORK?
 ---
-By default, this docker will detect env var `VIRTUAL_HOST` and `LETSENCRYPT_HOST` on the running container that have same connected network (default is bridge)
+By default, this docker will detect env var `VIRTUAL_HOST` and `LETSENCRYPT_HOST` on the running container that have same connected network (default is bridge). If you wants to run as docker-compose (which is usually use the auto-generated network). You must setup this **docker-reverse-proxy** to join the auto generated network created by docker-compose automatically through this script
 
-- You can connect all networks (except host and none) to this docker in this way
+- change `reverse-proxy` to your custom container name (default is reverse-proxy)
 ```sh
-> ./auto_net.brb <container-name>
+> ./auto_net.brb reverse-proxy
 ```
 
 - the output display will be like this
 ```sh
-	 ./ Docker Auto Join Network \.
+   ./ Docker Auto Join Network \.
 
 
  [+] LIST ALL DOCKER NETWORKS 
@@ -76,13 +82,11 @@ By default, this docker will detect env var `VIRTUAL_HOST` and `LETSENCRYPT_HOST
 
 
  [+] LIST [ reverse-proxy ] CONTAINER CONNECTED NETWORKS
-  |--[-] 329d3a2e32d8
-  |--[-] cefc731a02d6
+  |--[-] 7f23f3060488
   
 
  [+] DISCONNECT ALL NETWORKS ATTACHED TO [ reverse-proxy ] CONTAINER
-  |--[-] Disconecting 329d3a2e32d8 ... OK
-  |--[-] Disconecting cefc731a02d6 ... OK
+  |--[-] Disconecting 7f23f3060488 ... OK
 
 
  [+] CONNECTING [ reverse-proxy ] TO ALL NETWORKS
@@ -93,7 +97,6 @@ By default, this docker will detect env var `VIRTUAL_HOST` and `LETSENCRYPT_HOST
 
 
  [+] RESTART [ reverse-proxy ] CONTAINER ... OK
-
 ```
 
 - to verify it
@@ -104,5 +107,6 @@ By default, this docker will detect env var `VIRTUAL_HOST` and `LETSENCRYPT_HOST
 "NetworkID": "cefc731a02d65e46b8085675b978d4abcf60c7a112ef0b829cf137870bc65424",
 "NetworkID": "a727409568618db52186fdd2c2ed8bddc36bd2379c098c2b1eabaabf6c08c317",
 "NetworkID": "7f23f306048847b82a36cacb517a6121c395ed48a9f3b2f784921915b78501f7",
-
 ```
+
+container reverse-proxy which by default runs under a bridge network will automatically connect to all existing networks (except hosts and none).
