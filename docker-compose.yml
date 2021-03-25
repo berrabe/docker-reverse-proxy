@@ -21,7 +21,6 @@ services:
         cpus: 1
         mem_limit: 100M
         memswap_limit: 100M
-        network_mode: bridge
 
     reverse-proxy-letencrypt:
         image: jrcs/letsencrypt-nginx-proxy-companion
@@ -39,4 +38,12 @@ services:
         cpus: 1
         mem_limit: 100M
         memswap_limit: 100M
-        network_mode: bridge
+
+
+# Useful for connect betwwen docker container without auto_net.brb
+# genereate your custom network with 'docker network create <name>'
+
+# networks:
+#     default:
+#         external:
+#             name: <your custom network name>
